@@ -2,7 +2,7 @@ import requests
 import os
 
 OPENROUTER_KEY = os.getenv("OPENROUTER_API_KEY")
-MODEL = "anthropic/claude-3.5-haiku"
+MODEL = "openai/gpt-oss-20b:free"
 
 def call_llm(system_prompt: str, user_message: str) -> str:
     resp = requests.post(
@@ -16,7 +16,15 @@ def call_llm(system_prompt: str, user_message: str) -> str:
             ]
         }
     )
-    return resp.json()["choices"][0]["message"]["content"]
+    try:
+        data = resp.json()
+    except Exception:
+        return f"API error: {resp.status_code} - {resp.text[:200]}"
+    
+    if "choices" not in data:
+        return f"API error: {data.get('error', {}).get('message', 'Unknown error')}"
+    
+    return data["choices"][0]["message"]["content"]
 
 
 GATE_SYSTEM = """

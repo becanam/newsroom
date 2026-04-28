@@ -5,6 +5,8 @@ from agents.main_agent import analyze_article, chat
 from agents.gate import gate
 from agents.email_agent import format_digest, send_email
 
+app = FastAPI(title="Newsroom — News Context AI")
+
 # In-memory session store (간단하게)
 sessions = {}
 
