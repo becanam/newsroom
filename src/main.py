@@ -62,6 +62,10 @@ def chat_endpoint(req: ChatRequest):
 def send_digest(req: EmailRequest):
     result = analyze_article(req.input)
     digest = format_digest(result["analysis"])
+    
+    if req.input.startswith("http"):
+        digest += f"\n\n─────────────────────────────\n📎 원본 기사: {req.input}"
+    
     success = send_email(req.email, "📰 Your Daily News Digest", digest)
     return {"sent": success, "preview": digest[:200]}
 
