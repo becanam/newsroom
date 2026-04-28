@@ -11,6 +11,7 @@
     #chat-section { margin-top: 30px; display: none; }
     input[type=text] { width: 70%; padding: 8px; }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
   <h1>📰 Newsroom</h1>
@@ -38,7 +39,7 @@
         body: JSON.stringify({ input, session_id: SESSION })
       });
       const data = await res.json();
-      document.getElementById("output").textContent = data.analysis;
+      document.getElementById("output").innerHTML = marked.parse(data.analysis);
       document.getElementById("chat-section").style.display = "block";
     }
 
@@ -51,7 +52,7 @@
       });
       const data = await res.json();
       document.getElementById("chat-output").innerHTML +=
-        `<p><b>Q:</b> ${message}</p><p><b>A:</b> ${data.response}</p><hr>`;
+        `<p><b>Q:</b> ${message}</p><p><b>A:</b> ${marked.parse(data.response)}</p><hr>`;
       document.getElementById("chat-input").value = "";
     }
   </script>

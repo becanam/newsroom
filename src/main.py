@@ -3,8 +3,9 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from agents.main_agent import analyze_article, chat
 from agents.gate import gate
+from agents.email_agent import format_digest, send_email
 
-app = FastAPI(title="News Context AI")
+app = FastAPI(title="Newsroom — News Context AI")
 
 # In-memory session store (간단하게)
 sessions = {}
@@ -47,6 +48,14 @@ def chat_endpoint(req: ChatRequest):
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+@app.post("/email")
+def send_digest(req: EmailRequest):
+    result = analyze_article(req.input)
+    digest = format_digest(result["analysis"])
+    success = send_email(req.email, "📰 Your Daily News Digest", digest)
+    return {"sent": success, "preview": digest[:200]}
+app = FastAPI(title="News Context AI")
 
 # Serve frontend
 app.mount("/", StaticFiles(directory="../static", html=True), name="static")
