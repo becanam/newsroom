@@ -2,59 +2,467 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Newsroom</title>
-  <style>
-    body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; }
-    textarea { width: 100%; height: 100px; margin-bottom: 10px; }
-    button { padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; }
-    #output { white-space: pre-wrap; background: #f3f4f6; padding: 16px; border-radius: 8px; margin-top: 20px; }
-    #chat-section { margin-top: 30px; display: none; }
-    input[type=text] { width: 70%; padding: 8px; }
-  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-</head>
-<body>
-  <h1>📰 Newsroom</h1>
-  <p>뉴스 기사 URL 또는 텍스트를 붙여넣으세요</p>
-  <textarea id="article-input" placeholder="https://... 또는 기사 텍스트"></textarea>
-  <button onclick="analyze()">분석하기</button>
-  <div id="output"></div>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  <div id="chat-section">
-    <h2>💬 추가 질문</h2>
-    <input type="text" id="chat-input" placeholder="기사에 대해 궁금한 점을 물어보세요">
-    <button onclick="sendChat()">전송</button>
-    <div id="chat-output"></div>
-  </div>
-
-  <script>
-    const SESSION = "user-" + Math.random().toString(36).slice(2);
-
-    async function analyze() {
-      const input = document.getElementById("article-input").value;
-      document.getElementById("output").textContent = "분석 중...";
-      const res = await fetch("/analyze", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ input, session_id: SESSION })
-      });
-      const data = await res.json();
-      document.getElementById("output").innerHTML = marked.parse(data.analysis);
-      document.getElementById("chat-section").style.display = "block";
+    :root {
+      --ink: #1a1a1a;
+      --paper: #f5f0e8;
+      --accent: #c0392b;
+      --muted: #8a7f72;
+      --border: #d4cdc3;
+      --white: #ffffff;
     }
 
-    async function sendChat() {
-      const message = document.getElementById("chat-input").value;
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+    }
+
+    header {
+      border-bottom: 2px solid var(--ink);
+      padding: 20px 40px;
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+    }
+
+    header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      letter-spacing: -0.5px;
+    }
+
+    header span {
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    main {
+      max-width: 760px;
+      margin: 48px auto;
+      padding: 0 24px;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 80px;
+      padding: 14px 16px;
+      background: var(--white);
+      border: 1.5px solid var(--border);
+      border-radius: 4px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      color: var(--ink);
+      resize: none;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    textarea:focus { border-color: var(--ink); }
+    textarea::placeholder { color: var(--muted); }
+
+    .level-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .level-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .level-btn {
+      padding: 6px 16px;
+      background: transparent;
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.8rem;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .level-btn:hover { border-color: var(--ink); color: var(--ink); }
+    .level-btn.active { background: var(--ink); border-color: var(--ink); color: var(--white); }
+
+    .bottom-row { display: flex; justify-content: flex-end; margin-bottom: 16px; }
+
+    button.primary {
+      padding: 10px 28px;
+      background: var(--ink);
+      color: var(--white);
+      border: none;
+      border-radius: 4px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    button.primary:hover { background: var(--accent); }
+    button.primary:active { transform: scale(0.98); }
+    button.primary:disabled { background: var(--muted); cursor: not-allowed; }
+
+    .progress-wrap {
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 8px;
+      display: none;
+    }
+
+    .progress-wrap.active { display: block; }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.6s ease;
+    }
+
+    #status {
+      font-size: 0.78rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      min-height: 20px;
+      margin-bottom: 16px;
+    }
+
+    #status.loading::after {
+      content: '';
+      display: inline-block;
+      width: 5px; height: 5px;
+      background: var(--accent);
+      border-radius: 50%;
+      margin-left: 8px;
+      animation: pulse 1s infinite;
+      vertical-align: middle;
+    }
+
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.2; } }
+
+    #result-card {
+      display: none;
+      background: var(--white);
+      border: 1.5px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 24px;
+      animation: fadeUp 0.4s ease;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-label {
+      padding: 10px 20px;
+      background: var(--ink);
+      color: var(--white);
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    #output {
+      padding: 24px;
+      font-size: 0.88rem;
+      line-height: 1.75;
+      color: var(--ink);
+    }
+
+    #output h3 { font-family: 'Playfair Display', serif; font-size: 1rem; margin: 20px 0 8px; }
+    #output strong { font-weight: 500; }
+    #output ul, #output ol { padding-left: 20px; margin: 8px 0; }
+    #output li { margin-bottom: 4px; }
+    #output table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.82rem; }
+    #output th { background: var(--paper); padding: 8px 12px; text-align: left; border-bottom: 2px solid var(--border); font-weight: 500; }
+    #output td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+    #output hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+    #output p { margin-bottom: 10px; }
+
+    #chat-section { display: none; animation: fadeUp 0.4s ease; }
+
+    .chat-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .chat-input-row { display: flex; gap: 10px; margin-bottom: 8px; }
+
+    .chat-progress-wrap {
+      height: 2px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .chat-progress-wrap.active { display: block; }
+
+    .chat-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.6s ease;
+    }
+
+    .chat-input-row input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 4px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.88rem;
+      background: var(--white);
+      color: var(--ink);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .chat-input-row input:focus { border-color: var(--ink); }
+
+    #chat-log { display: flex; flex-direction: column; gap: 14px; }
+
+    .chat-bubble {
+      padding: 14px 18px;
+      border-radius: 4px;
+      font-size: 0.87rem;
+      line-height: 1.65;
+      animation: fadeUp 0.3s ease;
+    }
+
+    .chat-bubble.user {
+      background: var(--ink);
+      color: var(--white);
+      align-self: flex-end;
+      max-width: 80%;
+    }
+
+    .chat-bubble.assistant {
+      background: var(--white);
+      border: 1.5px solid var(--border);
+      align-self: flex-start;
+      max-width: 90%;
+    }
+
+    .chat-bubble.assistant p { margin-bottom: 6px; }
+    .chat-bubble.assistant p:last-child { margin-bottom: 0; }
+
+    .typing-dots { display: flex; gap: 4px; align-items: center; padding: 4px 0; }
+
+    .typing-dots span {
+      display: inline-block;
+      width: 6px; height: 6px;
+      background: var(--muted);
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-5px); }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Newsroom</h1>
+  <span>AI Context Engine</span>
+</header>
+
+<main>
+  <div class="input-group">
+    <textarea id="article-input" placeholder="뉴스 기사 URL 또는 텍스트를 붙여넣으세요…"></textarea>
+  </div>
+
+  <div class="level-row">
+    <span class="level-label">난이도</span>
+    <button class="level-btn active" data-level="easy">쉽게</button>
+    <button class="level-btn" data-level="medium">보통</button>
+    <button class="level-btn" data-level="expert">전문가</button>
+  </div>
+
+  <div class="bottom-row">
+    <button class="primary" onclick="analyze()" id="analyze-btn">분석하기</button>
+  </div>
+
+  <div class="progress-wrap" id="progress-wrap">
+    <div class="progress-fill" id="progress-fill"></div>
+  </div>
+
+  <div id="status"></div>
+
+  <div id="result-card">
+    <div class="card-label">분석 결과</div>
+    <div id="output"></div>
+  </div>
+
+  <div id="chat-section">
+    <p class="chat-label">추가 질문</p>
+    <div class="chat-input-row">
+      <input type="text" id="chat-input" placeholder="기사에 대해 궁금한 점을 물어보세요…" onkeydown="if(event.key==='Enter') sendChat()">
+      <button class="primary" onclick="sendChat()" id="chat-btn">전송</button>
+    </div>
+    <div class="chat-progress-wrap" id="chat-progress-wrap">
+      <div class="chat-progress-fill" id="chat-progress-fill"></div>
+    </div>
+    <div id="chat-log"></div>
+  </div>
+</main>
+
+<script>
+  const SESSION = "s-" + Math.random().toString(36).slice(2, 9);
+  const status = document.getElementById("status");
+  let selectedLevel = "easy";
+
+  document.querySelectorAll(".level-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".level-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      selectedLevel = btn.dataset.level;
+    });
+  });
+
+  function animateProgress(fillId, wrapId, duration) {
+    const wrap = document.getElementById(wrapId);
+    const fill = document.getElementById(fillId);
+    wrap.classList.add("active");
+    fill.style.width = "0%";
+
+    const steps = [
+      [0.1, 30], [0.3, 55], [0.5, 75], [0.7, 88], [0.9, 94]
+    ];
+
+    steps.forEach(([delay, pct]) => {
+      setTimeout(() => { fill.style.width = pct + "%"; }, duration * delay);
+    });
+
+    return { fill, wrap };
+  }
+
+  function completeProgress(fill, wrap) {
+    fill.style.width = "100%";
+    setTimeout(() => {
+      wrap.classList.remove("active");
+      fill.style.transition = "none";
+      fill.style.width = "0%";
+      setTimeout(() => { fill.style.transition = "width 0.6s ease"; }, 50);
+    }, 400);
+  }
+
+  async function analyze() {
+    const input = document.getElementById("article-input").value.trim();
+    if (!input) return;
+
+    const btn = document.getElementById("analyze-btn");
+    btn.disabled = true;
+    status.textContent = "분석 중";
+    status.className = "loading";
+    document.getElementById("result-card").style.display = "none";
+    document.getElementById("chat-section").style.display = "none";
+
+    const { fill, wrap } = animateProgress("progress-fill", "progress-wrap", 25000);
+
+    try {
+      const res = await fetch("/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input, session_id: SESSION, level: selectedLevel })
+      });
+      const data = await res.json();
+      completeProgress(fill, wrap);
+      document.getElementById("output").innerHTML = marked.parse(data.analysis || "분석 결과를 가져오지 못했습니다.");
+      document.getElementById("result-card").style.display = "block";
+      document.getElementById("chat-section").style.display = "block";
+      status.textContent = "";
+      status.className = "";
+    } catch (e) {
+      completeProgress(fill, wrap);
+      status.textContent = "오류가 발생했습니다. 다시 시도해주세요.";
+      status.className = "";
+    }
+
+    btn.disabled = false;
+  }
+
+  async function sendChat() {
+    const input = document.getElementById("chat-input");
+    const message = input.value.trim();
+    if (!message) return;
+
+    const btn = document.getElementById("chat-btn");
+    btn.disabled = true;
+    input.value = "";
+
+    const log = document.getElementById("chat-log");
+    log.innerHTML += `<div class="chat-bubble user">${message}</div>`;
+
+    const { fill, wrap } = animateProgress("chat-progress-fill", "chat-progress-wrap", 8000);
+
+    const loadingId = "loading-" + Date.now();
+    log.innerHTML += `
+      <div class="chat-bubble assistant" id="${loadingId}">
+        <div class="typing-dots"><span></span><span></span><span></span></div>
+      </div>`;
+    log.lastElementChild.scrollIntoView({ behavior: "smooth" });
+
+    try {
       const res = await fetch("/chat", {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message, session_id: SESSION })
       });
       const data = await res.json();
-      document.getElementById("chat-output").innerHTML +=
-        `<p><b>Q:</b> ${message}</p><p><b>A:</b> ${marked.parse(data.response)}</p><hr>`;
-      document.getElementById("chat-input").value = "";
+      completeProgress(fill, wrap);
+      document.getElementById(loadingId).innerHTML = marked.parse(data.response || "응답을 가져오지 못했습니다.");
+    } catch (e) {
+      completeProgress(fill, wrap);
+      document.getElementById(loadingId).textContent = "오류가 발생했습니다.";
     }
-  </script>
+
+    btn.disabled = false;
+    log.lastElementChild.scrollIntoView({ behavior: "smooth" });
+  }
+</script>
+
 </body>
 </html>
