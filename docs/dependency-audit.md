@@ -13,10 +13,19 @@
 | python-dotenv | BSD-3 | 1.0.1 | Load .env variables | os.environ manually (error prone) |
 
 ## Security Audit
+실행 명령어:
 ```bash
 pip install pip-audit
-pip-audit
+pip-audit -r requirements.txt
 ```
+
+| Package | Issue | Action |
+|---------|-------|--------|
+| requests 2.32.3 | CVE-2024-47081, CVE-2026-25645 | 2.33.0으로 업데이트 |
+| python-dotenv 1.0.1 | CVE-2026-28684 | 1.2.2으로 업데이트 |
+| starlette 0.38.6 | CVE-2024-47874, CVE-2025-54121 | 0.47.2으로 업데이트 |
+
+취약점 발견 후 requirements.txt 버전을 모두 수정.
 
 ## License Choice for This Project
 **MIT License** — chosen because:
