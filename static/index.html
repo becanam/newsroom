@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Newsroom</title>
+  <style>
+    body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; }
+    textarea { width: 100%; height: 100px; margin-bottom: 10px; }
+    button { padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; }
+    #output { white-space: pre-wrap; background: #f3f4f6; padding: 16px; border-radius: 8px; margin-top: 20px; }
+    #chat-section { margin-top: 30px; display: none; }
+    input[type=text] { width: 70%; padding: 8px; }
+  </style>
+</head>
+<body>
+  <h1>📰 Newsroom</h1>
+  <p>뉴스 기사 URL 또는 텍스트를 붙여넣으세요</p>
+  <textarea id="article-input" placeholder="https://... 또는 기사 텍스트"></textarea>
+  <button onclick="analyze()">분석하기</button>
+  <div id="output"></div>
+
+  <div id="chat-section">
+    <h2>💬 추가 질문</h2>
+    <input type="text" id="chat-input" placeholder="기사에 대해 궁금한 점을 물어보세요">
+    <button onclick="sendChat()">전송</button>
+    <div id="chat-output"></div>
+  </div>
+
+  <script>
+    const SESSION = "user-" + Math.random().toString(36).slice(2);
+
+    async function analyze() {
+      const input = document.getElementById("article-input").value;
+      document.getElementById("output").textContent = "분석 중...";
+      const res = await fetch("/analyze", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ input, session_id: SESSION })
+      });
+      const data = await res.json();
+      document.getElementById("output").textContent = data.analysis;
+      document.getElementById("chat-section").style.display = "block";
+    }
+
+    async function sendChat() {
+      const message = document.getElementById("chat-input").value;
+      const res = await fetch("/chat", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ message, session_id: SESSION })
+      });
+      const data = await res.json();
+      document.getElementById("chat-output").innerHTML +=
+        `<p><b>Q:</b> ${message}</p><p><b>A:</b> ${data.response}</p><hr>`;
+      document.getElementById("chat-input").value = "";
+    }
+  </script>
+</body>
+</html>
