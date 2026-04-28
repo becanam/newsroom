@@ -46,20 +46,18 @@ def analyze_article(url_or_text: str) -> dict:
         "iterations": iteration
     }
 
-def chat(article_context: str, conversation_history: list, user_message: str) -> str:
-    """Chat sub-agent with full conversation history"""
-    messages = []
-    for msg in conversation_history:
-        messages.append(msg)
-    
+def chat(article_context: str, conversation_history: list, user_message: str, level: str = "medium") -> str:
+    from .summarizer import COMPLEXITY_PROMPTS
+    tone = COMPLEXITY_PROMPTS.get(level, COMPLEXITY_PROMPTS["medium"])
+    system = CHAT_SYSTEM + f"\n\nTone instruction: {tone}"
     full_context = f"Article context:\n{article_context}\n\nUser question: {user_message}"
-    return call_llm(CHAT_SYSTEM, full_context)
+    return call_llm(system, full_context)
 
 def extract_links(text: str) -> list:
     urls = re.findall(r'https?://[^\s\)\"]+', text)
     return urls[:2]  # 최대 2개만 (무한루프 방지)
 
-def analyze_article(url_or_text: str, depth: int = 0) -> dict:
+def analyze_article(url_or_text: str, depth: int = 0, level: str = "medium") -> dict:
     if url_or_text.startswith("http"):
         article_text = fetch_article(url_or_text)
     else:
@@ -70,8 +68,8 @@ def analyze_article(url_or_text: str, depth: int = 0) -> dict:
 
     while iteration < MAX_ITERATIONS:
         iteration += 1
-        summary = summarize(article_text)
-        context = add_context(summary)
+        summary = summarize(article_text, level=level)
+        context = add_context(summary, level=level)
         result = f"{summary}\n\n---\n\n{context}"
         passed, reason = evaluate(result)
         if passed:

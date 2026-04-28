@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.insert(0, os.path.dirname(__file__))
+
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -7,23 +11,33 @@ from agents.email_agent import format_digest, send_email
 
 app = FastAPI(title="Newsroom — News Context AI")
 
-# In-memory session store (간단하게)
 sessions = {}
 
 class AnalyzeRequest(BaseModel):
-    input: str  # URL or article text
+    input: str
     session_id: str = "default"
+    level: str = "medium"
 
 class ChatRequest(BaseModel):
     message: str
     session_id: str = "default"
 
+class EmailRequest(BaseModel):
+    input: str
+    email: str
+    session_id: str = "default"
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 @app.post("/analyze")
 def analyze(req: AnalyzeRequest):
-    result = analyze_article(req.input)
+    result = analyze_article(req.input, level=req.level)
     sessions[req.session_id] = {
         "article": result["article_text"],
-        "history": []
+        "history": [],
+        "level": req.level
     }
     return {
         "analysis": result["analysis"],
@@ -35,19 +49,14 @@ def chat_endpoint(req: ChatRequest):
     session = sessions.get(req.session_id, {})
     article = session.get("article", "")
     history = session.get("history", [])
+    level = session.get("level", "medium")
     
-    response = chat(article, history, req.message)
+    response = chat(article, history, req.message, level=level)
     
-    # Update history
     history.append({"role": "user", "content": req.message})
     history.append({"role": "assistant", "content": response})
     sessions[req.session_id]["history"] = history
-    
     return {"response": response}
-
-@app.get("/health")
-def health():
-    return {"status": "ok"}
 
 @app.post("/email")
 def send_digest(req: EmailRequest):
@@ -55,7 +64,5 @@ def send_digest(req: EmailRequest):
     digest = format_digest(result["analysis"])
     success = send_email(req.email, "📰 Your Daily News Digest", digest)
     return {"sent": success, "preview": digest[:200]}
-app = FastAPI(title="News Context AI")
 
-# Serve frontend
 app.mount("/", StaticFiles(directory="../static", html=True), name="static")

@@ -10,12 +10,23 @@ def fetch_article(url: str) -> str:
     return " ".join(p.get_text() for p in paragraphs[:40])
 
 SUMMARIZER_SYSTEM = """
-You are a news summarizer. Be concise and clear.
-1. Write a 2-sentence summary (max 60 words)
-2. List exactly 3 key facts as bullet points (1 line each)
-3. List key people/organizations (name + 1 word role only)
+You are a news summarizer. Format your response in clean markdown.
 
-Keep the total response under 200 words.
+## 📋 Summary
+Write 2 clear sentences summarizing the article.
+
+## 🔑 Key Facts
+- Fact 1
+- Fact 2
+- Fact 3
+
+## 👤 Key People & Organizations
+- **Name** — role (1 line each)
+
+Rules:
+- Bold all important terms, names, and organizations using **bold**
+- Keep total response under 200 words
+- Be concise and direct
 """
 
 def summarize(article_text: str) -> str:

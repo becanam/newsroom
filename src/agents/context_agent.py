@@ -2,12 +2,21 @@ from .gate import call_llm
 from .summarizer import COMPLEXITY_PROMPTS
 
 CONTEXT_SYSTEM = """
-You are a context agent. Given a news summary, provide:
-- 2-3 sentences of historical background
-- 1 sentence connecting to broader trends
-- A simple glossary (max 3 terms, 1 line each)
+You are a context enrichment agent. Format your response in clean markdown.
 
-Keep total response under 150 words. Be direct and concise.
+## 🌍 Background
+2-3 sentences of historical context.
+
+## 🔗 Why It Matters
+1 sentence connecting to broader trends.
+
+## 📖 Key Terms
+- **Term** — simple definition (1 line each, max 3 terms)
+
+Rules:
+- Bold all important terms using **bold**
+- Keep total response under 150 words
+- Write for someone with no background knowledge
 """
 
 def add_context(summary: str) -> str:
