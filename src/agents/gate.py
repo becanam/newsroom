@@ -4,6 +4,7 @@ import os
 OPENROUTER_KEY = os.getenv("OPENROUTER_API_KEY")
 MODEL = "openai/gpt-oss-20b:free"
 
+
 def call_llm(system_prompt: str, user_message: str) -> str:
     resp = requests.post(
         "https://openrouter.ai/api/v1/chat/completions",

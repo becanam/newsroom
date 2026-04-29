@@ -1,22 +1,41 @@
 # Ralph Mode Log
 
-## Iteration 1
-**Date**: 2026-04-28
-**Prompt**: "Generate a news summarizer that fetches a URL and returns a 3-sentence summary with key facts"
-**Tool**: Claude Code
-**Result**: summarizer.py 기본 버전 생성. BeautifulSoup import 누락으로 ModuleNotFoundError 발생
-**Changes made**: requirements.txt에 beautifulsoup4 추가, import 수정
+## 개요
+Ralph Mode는 AI 에이전트가 결과를 스스로 평가하고 품질 기준을 통과할 때까지 반복 개선하는 패턴입니다.
+최대 3회 반복하며, PASS가 나오면 즉시 결과를 반환한다.
+---
 
-## Iteration 2
-**Date**: 2026-04-28
-**Prompt**: "Fix the summarizer — it's returning empty strings for some news sites that block scrapers"
-**Tool**: Claude Code
-**Result**: User-Agent 헤더 추가 + try/except로 fallback 처리
-**Changes made**: fetch_article()에 headers 파라미터 추가, 예외 처리 추가
+## 실제 앱 실행 중 Ralph Mode 동작 예시
 
-## Iteration 3
-**Date**: 2026-04-28
-**Prompt**: "The evaluator is too lenient — it passes low quality summaries. Make it stricter"
-**Tool**: Claude Code
-**Result**: EVAL_SYSTEM 프롬프트 개선, 기준 명확화
-**Changes made**: evaluator.py EVAL_SYSTEM 업데이트 — 더 구체적인 PASS 기준 명시
+### 예시 1 — 1회 반복 후 PASS
+
+```
+=== Ralph Mode: 반복 1 시작 ===
+Evaluator 결과: PASS ✅
+=== 총 1회 반복 후 완료 ===
+```
+
+### 예시 2 — 3회 반복 후 PASS
+
+```
+=== Ralph Mode: 반복 1 시작 ===
+Evaluator 결과: RETRY ❌
+이유: Lacks sufficient historical context (e.g., previous approval levels, prior market performance, background of Virginia gerrymandering) and depth for a comprehensive summary.
+=== Ralph Mode: 반복 2 시작 ===
+Evaluator 결과: RETRY ❌
+이유: The response offers a clear and concise summary, but it lacks sufficient historical context about approval ratings, market trends, and previous political developments. It is understandable, yet it doesn't meet the >=7 score criteria.
+=== Ralph Mode: 반복 3 시작 ===
+Evaluator 결과: PASS ✅
+=== 총 3회 반복 후 완료 ===
+```
+
+### 예시 3 — 2회 반복 후 PASS
+
+```
+=== Ralph Mode: 반복 1 시작 ===
+Evaluator 결과: RETRY ❌
+이유: The reply provides a decent summary and key facts, but it lacks sufficient historical context (e.g., past market cycles, prior BOE warnings) and could be too brief for readers without background. This shortcoming keeps it below a satisfactory score.
+=== Ralph Mode: 반복 2 시작 ===
+Evaluator 결과: PASS ✅
+=== 총 2회 반복 후 완료 ===
+```

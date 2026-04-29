@@ -29,9 +29,6 @@ Rules:
 - Be concise and direct
 """
 
-def summarize(article_text: str) -> str:
-    return call_llm(SUMMARIZER_SYSTEM, article_text[:4000])
-
 COMPLEXITY_PROMPTS = {
     "easy": "Explain everything as if talking to a 15-year-old with no background knowledge. Use very simple words, short sentences, and everyday analogies.",
     "medium": "Assume the reader has basic general knowledge but is not an expert. Explain technical terms briefly.",

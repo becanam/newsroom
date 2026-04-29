@@ -12,40 +12,6 @@ The user has read an article. Answer their question using the context provided.
 Be clear, accurate, and explain any background they might not know.
 """
 
-def analyze_article(url_or_text: str) -> dict:
-    """Main agent loop — Ralph Mode pattern"""
-    
-    # Step 1: fetch if URL
-    if url_or_text.startswith("http"):
-        article_text = fetch_article(url_or_text)
-    else:
-        article_text = url_or_text
-    
-    iteration = 0
-    result = ""
-    
-    # Ralph Mode: loop until evaluator passes or max iterations
-    while iteration < MAX_ITERATIONS:
-        iteration += 1
-        
-        # Sub-agents in sequence
-        summary = summarize(article_text)
-        context = add_context(summary)
-        result = f"{summary}\n\n---\n\n{context}"
-        
-        # Evaluate
-        passed, reason = evaluate(result)
-        if passed:
-            break
-        # If not passed, the loop retries with the reason as hint
-        article_text = f"{article_text}\n\nPrevious attempt was insufficient: {reason}"
-    
-    return {
-        "article_text": article_text,
-        "analysis": result,
-        "iterations": iteration
-    }
-
 def chat(article_context: str, conversation_history: list, user_message: str, level: str = "medium") -> str:
     from .summarizer import COMPLEXITY_PROMPTS
     tone = COMPLEXITY_PROMPTS.get(level, COMPLEXITY_PROMPTS["medium"])
@@ -68,13 +34,22 @@ def analyze_article(url_or_text: str, depth: int = 0, level: str = "medium") -> 
 
     while iteration < MAX_ITERATIONS:
         iteration += 1
+        print(f"\n=== Ralph Mode: 반복 {iteration} 시작 ===")
+        
         summary = summarize(article_text, level=level)
         context = add_context(summary, level=level)
         result = f"{summary}\n\n---\n\n{context}"
+        
         passed, reason = evaluate(result)
+        print(f"Evaluator 결과: {'PASS ✅' if passed else 'RETRY ❌'}")
+        if not passed:
+            print(f"이유: {reason}")
+        
         if passed:
             break
         article_text = f"{article_text}\n\nPrevious attempt insufficient: {reason}"
+
+    print(f"=== 총 {iteration}회 반복 후 완료 ===\n")
 
     # 하이퍼링크 감지 — depth 0일 때만 (무한루프 방지)
     if depth == 0:

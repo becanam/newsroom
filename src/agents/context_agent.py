@@ -19,9 +19,6 @@ Rules:
 - Write for someone with no background knowledge
 """
 
-def add_context(summary: str) -> str:
-    return call_llm(CONTEXT_SYSTEM, summary)
-
 def add_context(summary: str, level: str = "medium") -> str:
     tone = COMPLEXITY_PROMPTS.get(level, COMPLEXITY_PROMPTS["medium"])
     system = CONTEXT_SYSTEM + f"\n\nTone instruction: {tone}"
